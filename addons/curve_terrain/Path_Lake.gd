@@ -1,12 +1,13 @@
 tool
 extends Path
 
-export(float, 0.1, 100.0, 0.1) var depth = 5.0
-export(float, 0.1, 10.0, 0.1) var bake_interval = 1.0
+export(float, 0.1, 100.0, 0.1) var depth = 1.0
+export(float, 0.05, 10.0, 0.05) var bake_interval = 1.0
+
 export var smooth_faces = true
 export var use_collision = true
 export(int, 1, 10, 1) var edge_noise_freq = 1
-export(float, 0.0, 1.0, 0.1) var edge_noise_strength := 0.0
+export(float, 0.0, 1.0, 0.02) var edge_noise_strength := 0.0
 
 export(Material) var material = preload("res://addons/curve_terrain/terrain.material")
 
@@ -26,12 +27,7 @@ var change = 0
 func _ready():
 	if Engine.editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
 		self.connect("curve_changed", self, "_on_Path_curve_changed")
-		self.name = "Curve Terrain"
-		if get_child_count() ==0:
-			var terrain_holder = Spatial.new()
-			terrain_holder.name = "Terrain Holder"
-			self.add_child(terrain_holder)
-#			terrain_holder.set_owner(get_tree().edited_scene_root) # uncomment to show children to user need to make this a function
+		self.name = "Lake"
 
 
 func _process(delta):
@@ -49,14 +45,16 @@ func _process(delta):
 				regen_mesh()
 
 		for index in range(0, childvarlist.size()):
-			for idx in range(0,get_node("Terrain Holder").get_children().size()): # should only ever be 0-1
-				if get_node("Terrain Holder").get_child(idx)[childvarlist[index]] != self[childvarlist[index]]:
-					get_node("Terrain Holder").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
+			for idx in range(0,get_node("../Terrain Holder/Land").get_children().size()):
+				if idx == 0: # should only ever be 0, but prevent invalid index lookups
+					if get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] != self[childvarlist[index]]:
+						get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
+
 
 func gen_mesh(vertices, regen):
 	if vertices.size()>2:
 		if vertices != old_vertices or regen:
-			for child in get_node("Terrain Holder").get_children():
+			for child in get_node("../Terrain Holder/Land").get_children():
 				child.free()
 
 			old_vertices = vertices
@@ -77,19 +75,20 @@ func gen_mesh(vertices, regen):
 
 			csg_poly.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
 			csg_poly.polygon = arrays
+			csg_poly.operation = CSGShape.OPERATION_SUBTRACTION
 			csg_poly.set_path_joined(true)
 			csg_poly.depth = depth
-			csg_poly.name = "Land"
+			csg_poly.name = "Lake"
 
-			get_node("Terrain Holder").add_child(csg_poly)
+			get_node("../Terrain Holder/Land").add_child(csg_poly)
 			csg_poly.set_owner(get_tree().edited_scene_root)
-			csg_poly.global_rotate(Vector3(1,0,0),deg2rad(-90))
-			csg_poly.global_rotate(Vector3(0,1,0),deg2rad(90))
+#			csg_poly.global_rotate(Vector3(1,0,0),deg2rad(-90))
+#			csg_poly.global_rotate(Vector3(0,1,0),deg2rad(90))
 
 			for index in range(0, childvarlist.size()):
 				csg_poly[childvarlist[index]] = self[childvarlist[index]]
 	else:
-		for child in get_node("Terrain Holder").get_children():
+		for child in get_node("../Terrain Holder/Land").get_children():
 			child.free() # 'dangerous', but breaks otherwise
 
 
@@ -121,8 +120,6 @@ func regen_mesh():
 
 
 func _on_Path_curve_changed():
-	get_node("Lake").change=1
-	get_node("Lake")._on_Path_curve_changed()
 	if change > 0: # prevent recursive loop due to continoues Curve changes
 		change = 0
 		vertices = []

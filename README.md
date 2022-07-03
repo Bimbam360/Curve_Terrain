@@ -1,7 +1,8 @@
 # Curve_Terrain
 Add-on for Godot Engine to generate simple 3D platformer terrain meshes based on bezier curves
 
-![Uploading CurveTerrain.gif…]()
+![CurveTerrain](https://user-images.githubusercontent.com/11803603/177033807-fba8d020-3cb5-48f1-8b51-8e9d503f4b4b.gif)
+
 
 Installation
 -----------

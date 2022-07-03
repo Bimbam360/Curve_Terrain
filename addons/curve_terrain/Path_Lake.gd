@@ -58,35 +58,46 @@ func gen_mesh(vertices, regen):
 				child.free()
 
 			old_vertices = vertices
-			var csg_poly := CSGPolygon.new()
-			csg_poly.set_path_node(NodePath(".."))
-			csg_poly.material = load("res://addons/curve_terrain/terrain.material") # hardcoded, fix this later
+			var csg_lakebed := CSGPolygon.new()
+			var csg_lakewater := CSGPolygon.new()
 
-			var arrays = PoolVector2Array()
-			var idx_mod = 0.2
-			var idx_modmod = 0.001
-			for idx in range(0, vertices.size()):
-				if idx%10 == 0:
-					idx_mod = idx_mod+idx_modmod
-				arrays.push_back(Vector2(-vertices[idx].z + sin(idx*idx_mod)*edge_noise_strength, -vertices[idx].x+ cos(idx*idx_mod)*edge_noise_strength))
+			for csg in [csg_lakebed, csg_lakewater]:
+				csg.set_path_node(NodePath(".."))
+				var arrays = PoolVector2Array()
+				var idx_mod = 0.2
+				var idx_modmod = 0.001
+				for idx in range(0, vertices.size()):
+					if idx%10 == 0:
+						idx_mod = idx_mod+idx_modmod
+					arrays.push_back(Vector2(-vertices[idx].z + sin(idx*idx_mod)*edge_noise_strength, -vertices[idx].x+ cos(idx*idx_mod)*edge_noise_strength))
 
-				if idx%edge_noise_freq == 0:
-					idx_modmod = -idx_modmod
+					if idx%edge_noise_freq == 0:
+						idx_modmod = -idx_modmod
 
-			csg_poly.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
-			csg_poly.polygon = arrays
-			csg_poly.operation = CSGShape.OPERATION_SUBTRACTION
-			csg_poly.set_path_joined(true)
-			csg_poly.depth = depth
-			csg_poly.name = "Lake"
+				csg.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
+				csg.polygon = arrays
+				csg.set_path_joined(true)
+				csg.depth = depth
+				get_node("../Terrain Holder/Land").add_child(csg)
+				csg.set_owner(get_tree().edited_scene_root)
 
-			get_node("../Terrain Holder/Land").add_child(csg_poly)
-			csg_poly.set_owner(get_tree().edited_scene_root)
-#			csg_poly.global_rotate(Vector3(1,0,0),deg2rad(-90))
-#			csg_poly.global_rotate(Vector3(0,1,0),deg2rad(90))
+				for index in range(0, childvarlist.size()):
+					csg[childvarlist[index]] = self[childvarlist[index]]
 
-			for index in range(0, childvarlist.size()):
-				csg_poly[childvarlist[index]] = self[childvarlist[index]]
+			# Lakebed Specific
+			csg_lakebed.material = load("res://addons/curve_terrain/lakebed.material") # hardcoded, fix this later
+			csg_lakebed.translation.z = 0.1 # moving up slightly to avoid coplanar issues with CSG
+			csg_lakebed.name='lake'
+			csg_lakebed.operation = CSGShape.OPERATION_SUBTRACTION
+
+			# Lakewater Specific
+			csg_lakewater.material = load("res://addons/curve_terrain/lakewater.material") # hardcoded, fix this later
+			csg_lakewater.translation.z = -0.1 # moving down
+			csg_lakewater.name = 'water'
+			csg_lakewater.depth = 0.001
+			csg_lakewater.operation = CSGShape.OPERATION_UNION
+			csg_lakewater.scale = Vector3(1.01,1.01,1.01)
+
 	else:
 		for child in get_node("../Terrain Holder/Land").get_children():
 			child.free() # 'dangerous', but breaks otherwise

@@ -4,12 +4,13 @@ extends Path
 export(float, 0.1, 100.0, 0.1) var depth = 5.0
 export(float, 0.1, 10.0, 0.1) var bake_interval = 1.0
 export var smooth_faces = true
+export var use_collision = true
 export(int, 1, 10, 1) var edge_noise_freq = 1
-export var edge_noise_strength := 0.0
+export(float, 0.0, 1.0, 0.1) var edge_noise_strength := 0.0
 
 export(Material) var material = preload("res://addons/curve_terrain/terrain.material")
 
-var childvarlist = ["depth","smooth_faces"]
+var childvarlist = ["depth","smooth_faces", "use_collision"]
 var oldvarlist = [0.1, 0.0, 0.1, material]
 var varlist = [bake_interval, edge_noise_strength, edge_noise_freq, "material"]
 
@@ -18,7 +19,7 @@ var vertices = []
 var vert_in = []
 var vert_out = []
 var generate = false
-var change = false
+var change = 0
 
 
 # Called when the node enters the scene tree for the first time.
@@ -30,7 +31,7 @@ func _ready():
 			var terrain_holder = Spatial.new()
 			terrain_holder.name = "Terrain Holder"
 			self.add_child(terrain_holder)
-			terrain_holder.set_owner(get_tree().edited_scene_root)
+#			terrain_holder.set_owner(get_tree().edited_scene_root) # uncomment to show children to user need to make this a function
 
 
 func _process(delta):
@@ -52,20 +53,16 @@ func _process(delta):
 				if get_node("Terrain Holder").get_child(idx)[childvarlist[index]] != self[childvarlist[index]]:
 					get_node("Terrain Holder").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
 
-
-
 func gen_mesh(vertices, regen):
-	change = false
 	if vertices.size()>2:
 		if vertices != old_vertices or regen:
 			for child in get_node("Terrain Holder").get_children():
 				child.free()
 
 			old_vertices = vertices
-
 			var csg_poly := CSGPolygon.new()
 			csg_poly.set_path_node(NodePath(".."))
-			csg_poly.material = load("res://addons/curve_terrain/terrain.material")
+			csg_poly.material = load("res://addons/curve_terrain/terrain.material") # hardcoded, fix this later
 
 			var arrays = PoolVector2Array()
 			var idx_mod = 0.2
@@ -73,7 +70,7 @@ func gen_mesh(vertices, regen):
 			for idx in range(0, vertices.size()):
 				if idx%10 == 0:
 					idx_mod = idx_mod+idx_modmod
-				arrays.push_back(Vector2(-vertices[idx].z + sin(idx*idx_mod)*edge_noise_strength, -vertices[idx].x+ sin(idx*idx_mod)*edge_noise_strength))
+				arrays.push_back(Vector2(-vertices[idx].z + sin(idx*idx_mod)*edge_noise_strength, -vertices[idx].x+ cos(idx*idx_mod)*edge_noise_strength))
 
 				if idx%edge_noise_freq == 0:
 					idx_modmod = -idx_modmod
@@ -121,9 +118,10 @@ func regen_mesh():
 	generate=true
 
 
+
 func _on_Path_curve_changed():
-	if change == true: # prevent recursive loop due to continoues Curve changes
-		change=false
+	if change > 0: # prevent recursive loop due to continoues Curve changes
+		change = 0
 		vertices = []
 		vert_in = []
 		vert_out = []
@@ -139,4 +137,4 @@ func _on_Path_curve_changed():
 		self.set_curve(regen_curve(vertices, vert_in, vert_out))
 		generate=true
 
-	change = true
+	change+=1

@@ -6,9 +6,13 @@ export_presets.cfg
 PathTerrain.tscn
 project.Godot
 addons/curve_terrain/curve_terrain.tscn
+default_env.tres
+SkyHDR.exr
+
 
 # Mono-specific ignores
 .mono/
 data_*/
 
 **/*.import
+**/*.tscn

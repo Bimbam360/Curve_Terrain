@@ -47,7 +47,7 @@ Current Limitations
 
 Credits
 ---------------
-* A couple of the textures used were from the fabolous Kenney assets (CC-0)
+* Base textures used and the icon were from the fabulous Kenney assets at https://www.kenney.nl/assets/prototype-textures (CC-0)
 
 Contributing
 ------------

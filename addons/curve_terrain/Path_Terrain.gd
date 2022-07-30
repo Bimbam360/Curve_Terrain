@@ -15,6 +15,7 @@ var oldvarlist = [0.1, 0.0, 0.1, material]
 var varlist = [bake_interval, edge_noise_strength, edge_noise_freq, "material"]
 
 var old_vertices = PoolVector3Array()
+var old_verts = []
 var vertices = []
 var vert_in = []
 var vert_out = []
@@ -88,6 +89,7 @@ func gen_mesh(vertices, regen):
 
 			for index in range(0, childvarlist.size()):
 				csg_poly[childvarlist[index]] = self[childvarlist[index]]
+
 	else:
 		for child in get_node("Terrain Holder").get_children():
 			child.free() # 'dangerous', but breaks otherwise
@@ -115,14 +117,16 @@ func regen_mesh():
 		vert_in.append(Vector3(p_in.x, pos.y-pos.y, p_in.z))
 		vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
 
-	self.set_curve(regen_curve(vertices, vert_in, vert_out))
-	generate=true
+	if vertices.size()>2:
+		if vertices != old_verts:
+			old_verts = vertices
+			self.set_curve(regen_curve(vertices, vert_in, vert_out))
+			generate=true
 
 
 
 func _on_Path_curve_changed():
-	get_node("Lake").change=1
-	get_node("Lake")._on_Path_curve_changed()
+#	get_node("Lake")._on_Path_curve_changed_lake()
 	if change > 0: # prevent recursive loop due to continoues Curve changes
 		change = 0
 		vertices = []
@@ -141,3 +145,4 @@ func _on_Path_curve_changed():
 		generate=true
 
 	change+=1
+

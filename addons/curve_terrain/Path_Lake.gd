@@ -16,17 +16,18 @@ var oldvarlist = [0.1, 0.0, 0.1, material]
 var varlist = [bake_interval, edge_noise_strength, edge_noise_freq, "material"]
 
 var old_vertices = PoolVector3Array()
+var old_verts = []
 var vertices = []
 var vert_in = []
 var vert_out = []
 var generate = false
 var change = 0
-
+var counter = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	if Engine.editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
-		self.connect("curve_changed", self, "_on_Path_curve_changed")
+		self.connect("curve_changed", self, "_on_Path_curve_changed_lake")
 		self.name = "Lake"
 
 
@@ -37,6 +38,7 @@ func _process(delta):
 		if generate:
 			generate=false
 			gen_mesh(self.curve.get_baked_points(), true)
+
 
 		# If an inspector value has been updated
 		for index in range(0, varlist.size()):
@@ -49,7 +51,6 @@ func _process(delta):
 				if idx == 0: # should only ever be 0, but prevent invalid index lookups
 					if get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] != self[childvarlist[index]]:
 						get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
-
 
 func gen_mesh(vertices, regen):
 	if vertices.size()>2:
@@ -97,7 +98,6 @@ func gen_mesh(vertices, regen):
 			csg_lakewater.depth = 0.001
 			csg_lakewater.operation = CSGShape.OPERATION_UNION
 			csg_lakewater.scale = Vector3(1.01,1.01,1.01)
-
 	else:
 		for child in get_node("../Terrain Holder/Land").get_children():
 			child.free() # 'dangerous', but breaks otherwise
@@ -125,14 +125,16 @@ func regen_mesh():
 		vert_in.append(Vector3(p_in.x, pos.y-pos.y, p_in.z))
 		vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
 
-	self.set_curve(regen_curve(vertices, vert_in, vert_out))
-	generate=true
+	if vertices.size()>2:
+		if vertices != old_verts:
+			old_verts = vertices
+			self.set_curve(regen_curve(vertices, vert_in, vert_out))
+			generate=true
 
 
-
-func _on_Path_curve_changed():
-	if change > 0: # prevent recursive loop due to continoues Curve changes
-		change = 0
+func _on_Path_curve_changed_lake():
+	if change ==3: # prevent recursive loop due to continoues Curve changes
+		change = -5
 		vertices = []
 		vert_in = []
 		vert_out = []
@@ -146,6 +148,10 @@ func _on_Path_curve_changed():
 			vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
 
 		self.set_curve(regen_curve(vertices, vert_in, vert_out))
+
 		generate=true
 
-	change+=1
+	change +=1
+
+
+

@@ -33,15 +33,19 @@ var time_now = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	
 	if Engine.editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
 		self.connect("curve_changed", self, "_on_Path_curve_changed")
 		self.name = "Curve Terrain"
 		if get_child_count() ==0:
+			var lake = Lake.new()
+			self.add_child(lake)
+			lake.set_owner(get_tree().edited_scene_root) # uncomment to show children to user need to make this a function
+
 			var terrain_holder = Spatial.new()
 			terrain_holder.name = "Terrain Holder"
 			self.add_child(terrain_holder)
-#			terrain_holder.set_owner(get_tree().edited_scene_root) # uncomment to show children to user need to make this a function
+			terrain_holder.set_owner(get_tree().edited_scene_root) # uncomment to show children to user need to make this a function
+			
 
 
 func _process(delta):
@@ -54,7 +58,7 @@ func _process(delta):
 			var time_now = OS.get_ticks_msec()
 			gen_mesh(self.curve.get_baked_points())
 #			print(OS.get_ticks_msec() - time_now)	
-			get_node("Lake").gen_mesh(get_node("Lake").curve.get_baked_points())
+			get_node("Curve Lake").gen_mesh(get_node("Curve Lake").curve.get_baked_points())
 #			print(OS.get_ticks_msec() - time_now)	
 			
 		# If an inspector value has been updated
@@ -102,7 +106,7 @@ func gen_mesh(v):
 				
 		# Relies on "Terrain Holder" existing, if user renames this will breaK
 		get_node("Terrain Holder").add_child(csg_poly)
-		csg_poly.set_owner(get_tree().edited_scene_root)
+#		csg_poly.set_owner(get_tree().edited_scene_root)
 		csg_poly.global_rotate(Vector3(1,0,0),deg2rad(-90))
 		csg_poly.global_rotate(Vector3(0,1,0),deg2rad(90))
 		
@@ -131,7 +135,7 @@ func regen_mesh(setgetbool):
 		old_vert_out = vert_out
 		self.set_curve(regen_curve(vertices, vert_in, vert_out))
 		gen_mesh(self.curve.get_baked_points())
-		get_node("Lake").gen_mesh(get_node("Lake").curve.get_baked_points())
+		get_node("Curve Lake").gen_mesh(get_node("Curve Lake").curve.get_baked_points())
 		
 	else:
 		vertices = []
@@ -180,5 +184,3 @@ func _on_Path_curve_changed():
 		generate=true
 	else:
 		generate=false
-
-

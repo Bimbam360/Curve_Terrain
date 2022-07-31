@@ -29,30 +29,29 @@ var old_vert_out = []
 var generate = false
 var change = 0
 
-onready var thread = Thread.new()
+#onready var thread = Thread.new()
 var queue = []
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	if Engine.editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
-		thread.start(self, "_thread_function", "Wafflecopter")
+#		thread.start(self, "_thread_function", "Wafflecopter")
 		self.connect("curve_changed", self, "_on_Path_curve_changed_lake")
-		self.name = "Lake"
+		self.name = "Curve Lake"
 		# Third argument is optional userdata, it can be any variable.
-		
 
 
-func _thread_function(userdata):
-	while true:
-		if queue.size()>0:
-			var time_now = OS.get_ticks_msec()
-			gen_mesh(queue[queue.size()-1])
-			print(OS.get_ticks_msec() - time_now)	
-			queue = []
 
-# Thread must be disposed (or "joined"), for portability.
-func _exit_tree():
-	thread.wait_to_finish()
+#func _thread_function(userdata):
+#	while true:
+#		if queue.size()>0:
+##			var time_now = OS.get_ticks_msec()
+#			gen_mesh(queue[queue.size()-1])
+##			print(OS.get_ticks_msec() - time_now)	
+#			queue = []
+
+#func _exit_tree():
+#	thread.wait_to_finish()
 	
 func _process(delta):
 	if Engine.editor_hint:
@@ -62,7 +61,6 @@ func _process(delta):
 #			generate=false
 #			gen_mesh(self.curve.get_baked_points())
 
-
 		# If an inspector value has been updated
 		for index in range(0, varlist.size()):
 			if varlist[index] != oldvarlist[index]:
@@ -70,10 +68,11 @@ func _process(delta):
 				regen_mesh(true)
 
 		for index in range(0, childvarlist.size()):
-			for idx in range(0,get_node("../Terrain Holder/Land").get_children().size()):
-				if idx == 0: # should only ever be 0, but prevent invalid index lookups
-					if get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] != self[childvarlist[index]]:
-						get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
+			if get_node("../Terrain Holder").get_children().size() > 0:
+				for idx in range(0,get_node("../Terrain Holder/Land").get_children().size()):
+					if idx == 0: # should only ever be 0, but prevent invalid index lookups
+						if get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] != self[childvarlist[index]]:
+							get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
 
 
 
@@ -86,49 +85,50 @@ func _process(delta):
 
 
 func gen_mesh(v):
-	for child in get_node("../Terrain Holder/Land").get_children():
-		child.free()
-	
-	if v.size()>2:
-		var csg_lakebed := CSGPolygon.new()
-		var csg_lakewater := CSGPolygon.new()
+	if get_node("../Terrain Holder").get_children().size() > 0:
+		for child in get_node("../Terrain Holder/Land").get_children():
+			child.free()
+		
+		if v.size()>2:
+			var csg_lakebed := CSGPolygon.new()
+			var csg_lakewater := CSGPolygon.new()
 
-		for csg in [csg_lakebed, csg_lakewater]:
-			csg.set_path_node(NodePath(".."))
-			var arrays = PoolVector2Array()
-			var idx_mod = 0.2
-			var idx_modmod = 0.001
-			for idx in range(0, v.size()):
-				if idx%10 == 0:
-					idx_mod = idx_mod+idx_modmod
-				arrays.push_back(Vector2(-v[idx].z + sin(idx*idx_mod)*edge_noise_strength, -v[idx].x+ cos(idx*idx_mod)*edge_noise_strength))
+			for csg in [csg_lakebed, csg_lakewater]:
+				csg.set_path_node(NodePath(".."))
+				var arrays = PoolVector2Array()
+				var idx_mod = 0.2
+				var idx_modmod = 0.001
+				for idx in range(0, v.size()):
+					if idx%10 == 0:
+						idx_mod = idx_mod+idx_modmod
+					arrays.push_back(Vector2(-v[idx].z + sin(idx*idx_mod)*edge_noise_strength, -v[idx].x+ cos(idx*idx_mod)*edge_noise_strength))
 
-				if idx%edge_noise_freq == 0:
-					idx_modmod = -idx_modmod
+					if idx%edge_noise_freq == 0:
+						idx_modmod = -idx_modmod
 
-			csg.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
-			csg.polygon = arrays
-			csg.set_path_joined(true)
-			csg.depth = depth
+				csg.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
+				csg.polygon = arrays
+				csg.set_path_joined(true)
+				csg.depth = depth
 
 
-		# Lakebed Specific
-		csg_lakebed.material = lakebed_mat # hardcoded, fix this later
-		csg_lakebed.translation.z = 0.1 # moving up slightly to avoid coplanar issues with CSG
-		csg_lakebed.name='lake'
-		csg_lakebed.operation = CSGShape.OPERATION_SUBTRACTION
+			# Lakebed Specific
+			csg_lakebed.material = lakebed_mat # hardcoded, fix this later
+			csg_lakebed.translation.z = 0.1 # moving up slightly to avoid coplanar issues with CSG
+			csg_lakebed.name='lake'
+			csg_lakebed.operation = CSGShape.OPERATION_SUBTRACTION
 
-		# Lakewater Specific
-		csg_lakewater.material = lakewater_mat # hardcoded, fix this later
-		csg_lakewater.translation.z = -0.1 # moving down
-		csg_lakewater.name = 'water'
-		csg_lakewater.depth = 0.001
-		csg_lakewater.operation = CSGShape.OPERATION_UNION
-		csg_lakewater.scale = Vector3(1.01,1.01,1.01)
+			# Lakewater Specific
+			csg_lakewater.material = lakewater_mat # hardcoded, fix this later
+			csg_lakewater.translation.z = -0.1 # moving down
+			csg_lakewater.name = 'water'
+			csg_lakewater.depth = 0.001
+			csg_lakewater.operation = CSGShape.OPERATION_UNION
+			csg_lakewater.scale = Vector3(1.01,1.01,1.01)
 
-		for csg in [csg_lakebed, csg_lakewater]:
-			get_node("../Terrain Holder/Land").add_child(csg)
-			csg.set_owner(get_tree().edited_scene_root)
+			for csg in [csg_lakebed, csg_lakewater]:
+				get_node("../Terrain Holder/Land").add_child(csg)
+#				csg.set_owner(get_tree().edited_scene_root)
 			
 
 func regen_curve(v, v_in, v_out):
@@ -158,8 +158,8 @@ func regen_mesh(setgetbool):
 		old_vert_out = vert_out
 
 		self.set_curve(regen_curve(vertices, vert_in, vert_out))
-		queue.append(self.curve.get_baked_points())
-#		gen_mesh(self.curve.get_baked_points())
+#		queue.append(self.curve.get_baked_points())
+		gen_mesh(self.curve.get_baked_points())
 		
 	else:
 		vertices = []
@@ -181,8 +181,8 @@ func regen_mesh(setgetbool):
 			old_vert_out = vert_out
 
 			self.set_curve(regen_curve(vertices, vert_in, vert_out))
-			queue.append(self.curve.get_baked_points())
-#			gen_mesh(self.curve.get_baked_points())
+#			queue.append(self.curve.get_baked_points())
+			gen_mesh(self.curve.get_baked_points())
 
 
 

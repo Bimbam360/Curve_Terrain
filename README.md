@@ -19,7 +19,7 @@ Standard Godot Curve controls are present above the editor viewport to add and m
 
 TBD
 -----
-- Fix non-unique material parameter editing
+~~- Fix non-unique material parameter editing~~
 - Fix add point only updating on every second point
 - Add a second subtraction curve that allows you to cut lakes into a landscape.
 - Add bevel/lip to terrain edge

@@ -1,7 +1,7 @@
 # Curve_Terrain
 Add-on for Godot Engine to generate simple 3D platformer terrain meshes based on bezier curves
 
-![BezierTerrain](https://user-images.githubusercontent.com/11803603/177029277-8b0454c0-6166-4a37-93ff-b394b3fe6897.gif)
+![CurveTerrain](https://user-images.githubusercontent.com/11803603/177033807-fba8d020-3cb5-48f1-8b51-8e9d503f4b4b.gif)
 
 
 Installation
@@ -19,7 +19,7 @@ Standard Godot Curve controls are present above the editor viewport to add and m
 
 TBD
 -----
-- Fix non-unique material parameter editing
+~~- Fix non-unique material parameter editing~~
 - Fix add point only updating on every second point
 - Add a second subtraction curve that allows you to cut lakes into a landscape.
 - Add bevel/lip to terrain edge

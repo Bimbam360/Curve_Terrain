@@ -45,7 +45,7 @@ func _ready():
 			terrain_holder.name = "Terrain Holder"
 			self.add_child(terrain_holder)
 			terrain_holder.set_owner(get_tree().edited_scene_root) # uncomment to show children to user need to make this a function
-			
+
 
 
 func _process(delta):
@@ -57,10 +57,10 @@ func _process(delta):
 
 			var time_now = OS.get_ticks_msec()
 			gen_mesh(self.curve.get_baked_points())
-#			print(OS.get_ticks_msec() - time_now)	
+#			print(OS.get_ticks_msec() - time_now)
 			get_node("Curve Lake").gen_mesh(get_node("Curve Lake").curve.get_baked_points())
-#			print(OS.get_ticks_msec() - time_now)	
-			
+#			print(OS.get_ticks_msec() - time_now)
+
 		# If an inspector value has been updated
 		for index in range(0, varlist.size()):
 			if varlist[index] != oldvarlist[index]:
@@ -78,18 +78,18 @@ func _process(delta):
 func gen_mesh(v):
 	for child in get_node("Terrain Holder").get_children():
 		child.free()
-	
+
 	if v.size()>2:
 		# situationally add noise to the edge of the mesh.
 		# FUTURE: Add multiple noise profiles
 		var csg_poly := CSGPolygon.new()
 		csg_poly.set_path_node(NodePath(".."))
-		csg_poly.material = terrain_mat 
-		
+		csg_poly.material = terrain_mat
+
 		var arrays = PoolVector2Array()
 		var idx_mod = 0.2
 		var idx_modmod = 0.001
-		
+
 		for idx in range(0, v.size()):
 			if idx%10 == 0:
 				idx_mod = idx_mod+idx_modmod
@@ -97,25 +97,25 @@ func gen_mesh(v):
 
 			if idx%edge_noise_freq == 0:
 				idx_modmod = -idx_modmod
-		
+
 		csg_poly.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
 		csg_poly.polygon = arrays
 		csg_poly.set_path_joined(true)
 		csg_poly.depth = depth
 		csg_poly.name = "Land"
-				
+
 		# Relies on "Terrain Holder" existing, if user renames this will breaK
 		get_node("Terrain Holder").add_child(csg_poly)
-#		csg_poly.set_owner(get_tree().edited_scene_root)
+		csg_poly.set_owner(get_tree().edited_scene_root)
 		csg_poly.global_rotate(Vector3(1,0,0),deg2rad(-90))
 		csg_poly.global_rotate(Vector3(0,1,0),deg2rad(90))
-		
+
 func regen_curve(v, v_in, v_out):
 	var tcurve = Curve3D.new()
 	tcurve.bake_interval = bake_interval
 	for index in range(0, v.size()):
 		tcurve.add_point(v[index], v_in[index], v_out[index])
-	
+
 	return tcurve
 
 func regen_mesh(setgetbool):
@@ -136,7 +136,7 @@ func regen_mesh(setgetbool):
 		self.set_curve(regen_curve(vertices, vert_in, vert_out))
 		gen_mesh(self.curve.get_baked_points())
 		get_node("Curve Lake").gen_mesh(get_node("Curve Lake").curve.get_baked_points())
-		
+
 	else:
 		vertices = []
 		vert_in = []
@@ -162,25 +162,26 @@ func regen_mesh(setgetbool):
 
 
 func _on_Path_curve_changed():
-	vertices = []
-	vert_in = []
-	vert_out = []
-	# bit janky, but want to flatten the curve to the Y axis to make it visually match the terrain
-	for index in range(0, self.curve.get_point_count()):
-		var pos = self.curve.get_point_position(index)
-		var p_in = self.curve.get_point_in(index)
-		var p_out = self.curve.get_point_out(index)
-		vertices.append(Vector3(pos.x, pos.y-pos.y, pos.z))
-		vert_in.append(Vector3(p_in.x, pos.y-pos.y, p_in.z))
-		vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
+	if Engine.editor_hint:
+		vertices = []
+		vert_in = []
+		vert_out = []
+		# bit janky, but want to flatten the curve to the Y axis to make it visually match the terrain
+		for index in range(0, self.curve.get_point_count()):
+			var pos = self.curve.get_point_position(index)
+			var p_in = self.curve.get_point_in(index)
+			var p_out = self.curve.get_point_out(index)
+			vertices.append(Vector3(pos.x, pos.y-pos.y, pos.z))
+			vert_in.append(Vector3(p_in.x, pos.y-pos.y, p_in.z))
+			vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
 
-	if vertices != old_vertices or vert_in != old_vert_in or vert_out != old_vert_out:
-		old_vertices = vertices
-		old_vert_in = vert_in
-		old_vert_out = vert_out
+		if vertices != old_vertices or vert_in != old_vert_in or vert_out != old_vert_out:
+			old_vertices = vertices
+			old_vert_in = vert_in
+			old_vert_out = vert_out
 
 
-		self.set_curve(regen_curve(vertices, vert_in, vert_out))
-		generate=true
-	else:
-		generate=false
+			self.set_curve(regen_curve(vertices, vert_in, vert_out))
+			generate=true
+		else:
+			generate=false

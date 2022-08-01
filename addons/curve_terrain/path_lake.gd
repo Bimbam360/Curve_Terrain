@@ -29,30 +29,16 @@ var old_vert_out = []
 var generate = false
 var change = 0
 
-#onready var thread = Thread.new()
 var queue = []
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	if Engine.editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
-#		thread.start(self, "_thread_function", "Wafflecopter")
 		self.connect("curve_changed", self, "_on_Path_curve_changed_lake")
 		self.name = "Curve Lake"
-		# Third argument is optional userdata, it can be any variable.
 
 
-
-#func _thread_function(userdata):
-#	while true:
-#		if queue.size()>0:
-##			var time_now = OS.get_ticks_msec()
-#			gen_mesh(queue[queue.size()-1])
-##			print(OS.get_ticks_msec() - time_now)	
-#			queue = []
-
-#func _exit_tree():
-#	thread.wait_to_finish()
-	
+var counter = 0.0
 func _process(delta):
 	if Engine.editor_hint:
 		# If the Curve object has been updated
@@ -75,20 +61,42 @@ func _process(delta):
 							get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
 
 
+	if Engine.editor_hint:
+		if self.lakewater_mat.get_class() == "ShaderMaterial":
+			self.lakewater_mat.set_shader_param("usetime",1)
+			self.lakewater_mat.set_shader_param("time",counter)
+
+		counter+= delta
+		if counter >3600:
+			counter=0
+	else:
+		if self.lakewater_mat.get_class() == "ShaderMaterial":
+			self.lakewater_mat.set_shader_param("usetime",0)
+
+#func _physics_process(delta):
+#	if Engine.editor_hint:
+#		if self.lakewater_mat.get_class() == "ShaderMaterial":
+#			self.lakewater_mat.set_shader_param("usetime",1)
+#			self.lakewater_mat.set_shader_param("time",counter)
+#
+#		counter+= delta
+#		if counter >3600:
+#			counter=0
+#	else:
+#		if self.lakewater_mat.get_class() == "ShaderMaterial":
+#			self.lakewater_mat.set_shader_param("usetime",0)
 
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-
-
 
 func gen_mesh(v):
 	if get_node("../Terrain Holder").get_children().size() > 0:
 		for child in get_node("../Terrain Holder/Land").get_children():
 			child.free()
-		
+
 		if v.size()>2:
 			var csg_lakebed := CSGPolygon.new()
 			var csg_lakewater := CSGPolygon.new()
@@ -128,8 +136,8 @@ func gen_mesh(v):
 
 			for csg in [csg_lakebed, csg_lakewater]:
 				get_node("../Terrain Holder/Land").add_child(csg)
-#				csg.set_owner(get_tree().edited_scene_root)
-			
+				csg.set_owner(get_tree().edited_scene_root)
+
 
 func regen_curve(v, v_in, v_out):
 	var tcurve = Curve3D.new()
@@ -151,16 +159,15 @@ func regen_mesh(setgetbool):
 			vertices.append(Vector3(pos.x, pos.y-pos.y, pos.z))
 			vert_in.append(Vector3(p_in.x, pos.y-pos.y, p_in.z))
 			vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
-			
+
 
 		old_vertices = vertices
 		old_vert_in = vert_in
 		old_vert_out = vert_out
 
 		self.set_curve(regen_curve(vertices, vert_in, vert_out))
-#		queue.append(self.curve.get_baked_points())
 		gen_mesh(self.curve.get_baked_points())
-		
+
 	else:
 		vertices = []
 		vert_in = []
@@ -173,7 +180,7 @@ func regen_mesh(setgetbool):
 			vertices.append(Vector3(pos.x, pos.y-pos.y, pos.z))
 			vert_in.append(Vector3(p_in.x, pos.y-pos.y, p_in.z))
 			vert_out.append(Vector3(p_out.x, pos.y-pos.y, p_out.z))
-			
+
 
 		if vertices != old_vertices or vert_in != old_vert_in or vert_out != old_vert_out:
 			old_vertices = vertices
@@ -181,16 +188,16 @@ func regen_mesh(setgetbool):
 			old_vert_out = vert_out
 
 			self.set_curve(regen_curve(vertices, vert_in, vert_out))
-#			queue.append(self.curve.get_baked_points())
 			gen_mesh(self.curve.get_baked_points())
 
 
 
 func _on_Path_curve_changed_lake():
-	if change > 0: # prevent recursive loop due to continoues Curve changes
-		change = 0
-		regen_mesh(false)
-	
-	change+=1
+	if Engine.editor_hint:
+		if change > 0: # prevent recursive loop due to continoues Curve changes
+			change = 0
+			regen_mesh(false)
+
+		change+=1
 
 

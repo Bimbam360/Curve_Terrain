@@ -6,9 +6,14 @@ export_presets.cfg
 PathTerrain.tscn
 project.Godot
 addons/curve_terrain/curve_terrain.tscn
+addons/dreadpon.spatial_gardener
+addons/jm_pp_outlines
+unity_env.tres
 default_env.tres
 SkyHDR.exr
-
+models
+textures
+garden
 
 # Mono-specific ignores
 .mono/

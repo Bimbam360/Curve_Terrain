@@ -61,6 +61,7 @@ func _process(delta):
 							get_node("../Terrain Holder/Land").get_child(idx)[childvarlist[index]] = self[childvarlist[index]]
 
 
+func _physics_process(delta):
 	if Engine.editor_hint:
 		if self.lakewater_mat.get_class() == "ShaderMaterial":
 			self.lakewater_mat.set_shader_param("usetime",1)
@@ -72,19 +73,6 @@ func _process(delta):
 	else:
 		if self.lakewater_mat.get_class() == "ShaderMaterial":
 			self.lakewater_mat.set_shader_param("usetime",0)
-
-#func _physics_process(delta):
-#	if Engine.editor_hint:
-#		if self.lakewater_mat.get_class() == "ShaderMaterial":
-#			self.lakewater_mat.set_shader_param("usetime",1)
-#			self.lakewater_mat.set_shader_param("time",counter)
-#
-#		counter+= delta
-#		if counter >3600:
-#			counter=0
-#	else:
-#		if self.lakewater_mat.get_class() == "ShaderMaterial":
-#			self.lakewater_mat.set_shader_param("usetime",0)
 
 ####################################################################################################
 ####################################################################################################

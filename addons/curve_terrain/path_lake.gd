@@ -1,18 +1,19 @@
-tool
-extends Path
+@icon("res://addons/curve_terrain/lake.png")
+@tool
+class_name Lake
+extends Path3D
 
-class_name Lake, "res://addons/curve_terrain/lake.png"
 
-export(float, 0.1, 100.0, 0.1) var depth = 1.0
-export(float, 0.05, 10.0, 0.05) var bake_interval = 1.0
+@export_range(0.1, 100.0, 0.1) var depth : float = 1.0
+@export_range(0.05, 10.0, 0.05) var bake_interval : float = 1.0
 
-export var smooth_faces = true
-export var use_collision = true
-export(int, 1, 10, 1) var edge_noise_freq = 1
-export(float, 0.0, 1.0, 0.02) var edge_noise_strength := 0.0
+@export var smooth_faces = true
+@export var use_collision = true
+@export_range(1, 10, 1) var edge_noise_freq : int = 1
+@export_range(0.0, 1.0, 0.02) var edge_noise_strength : float = 0.0
 
-export(Material) var lakebed_mat = preload("res://addons/curve_terrain/lakebed.material")
-export(Material) var lakewater_mat = preload("res://addons/curve_terrain/lakewater.material")
+@export var lakebed_mat : Material =  preload("res://addons/curve_terrain/lakebed.material")
+@export var lakewater_mat : Material =  preload("res://addons/curve_terrain/lakewater.material")
 
 var childvarlist = ["depth","smooth_faces", "use_collision"]
 var oldvarlist = [0.1, 0.0, 0.1, lakebed_mat, lakewater_mat]
@@ -33,14 +34,14 @@ var queue = []
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	if Engine.editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
-		self.connect("curve_changed", self, "_on_Path_curve_changed_lake")
+	if Engine.is_editor_hint: # only run if in the editor. We don't want to have any updates occuring in game for any reason
+		connect("curve_changed", self._on_Path_curve_changed_lake)
 		self.name = "Curve Lake"
 
 
 var counter = 0.0
 func _process(delta):
-	if Engine.editor_hint:
+	if Engine.is_editor_hint:
 		# If the Curve object has been updated
 		varlist = [bake_interval, edge_noise_strength, edge_noise_freq]
 #		if generate:
@@ -62,7 +63,7 @@ func _process(delta):
 
 
 func _physics_process(delta):
-	if Engine.editor_hint:
+	if Engine.is_editor_hint:
 		if self.lakewater_mat.get_class() == "ShaderMaterial":
 			self.lakewater_mat.set_shader_param("usetime",1)
 			self.lakewater_mat.set_shader_param("time",counter)
@@ -86,12 +87,12 @@ func gen_mesh(v):
 			child.free()
 
 		if v.size()>2:
-			var csg_lakebed := CSGPolygon.new()
-			var csg_lakewater := CSGPolygon.new()
+			var csg_lakebed := CSGPolygon3D.new()
+			var csg_lakewater := CSGPolygon3D.new()
 
 			for csg in [csg_lakebed, csg_lakewater]:
 				csg.set_path_node(NodePath(".."))
-				var arrays = PoolVector2Array()
+				var arrays = PackedVector2Array()
 				var idx_mod = 0.2
 				var idx_modmod = 0.001
 				for idx in range(0, v.size()):
@@ -102,7 +103,7 @@ func gen_mesh(v):
 					if idx%edge_noise_freq == 0:
 						idx_modmod = -idx_modmod
 
-				csg.path_rotation = CSGPolygon.PATH_ROTATION_POLYGON
+				csg.path_rotation = CSGPolygon3D.PATH_ROTATION_POLYGON
 				csg.polygon = arrays
 				csg.set_path_joined(true)
 				csg.depth = depth
@@ -112,14 +113,14 @@ func gen_mesh(v):
 			csg_lakebed.material = lakebed_mat # hardcoded, fix this later
 			csg_lakebed.translation.z = 0.1 # moving up slightly to avoid coplanar issues with CSG
 			csg_lakebed.name='lake'
-			csg_lakebed.operation = CSGShape.OPERATION_SUBTRACTION
+			csg_lakebed.operation = CSGShape3D.OPERATION_SUBTRACTION
 
 			# Lakewater Specific
 			csg_lakewater.material = lakewater_mat # hardcoded, fix this later
 			csg_lakewater.translation.z = -0.1 # moving down
 			csg_lakewater.name = 'water'
 			csg_lakewater.depth = 0.001
-			csg_lakewater.operation = CSGShape.OPERATION_UNION
+			csg_lakewater.operation = CSGShape3D.OPERATION_UNION
 			csg_lakewater.scale = Vector3(1.01,1.01,1.01)
 
 			for csg in [csg_lakebed, csg_lakewater]:
@@ -181,7 +182,7 @@ func regen_mesh(setgetbool):
 
 
 func _on_Path_curve_changed_lake():
-	if Engine.editor_hint:
+	if Engine.is_editor_hint:
 		if change > 0: # prevent recursive loop due to continoues Curve changes
 			change = 0
 			regen_mesh(false)
